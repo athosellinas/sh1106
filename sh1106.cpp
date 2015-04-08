@@ -8,7 +8,8 @@
 #include <stdio.h>
 
 // Pull in the wire library to communicate with the LCD over I2C
-#include <Wire.h>
+//#include <Wire.h>
+#include "application.h"
 
 #include "sh1106.h"
 
@@ -578,4 +579,3 @@ byte sh1106_lcd::SendByte(byte data, SendState state)
     
     return transmissionStatus;
 }
-
