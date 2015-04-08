@@ -1,3 +1,4 @@
+
 /*
  * This sketch is designed to interface with SH1106 based OLED LCD over
  * an I2C interface
@@ -6,8 +7,10 @@
  */
 
 // Pull in the wire library to communicate with the LCD over I2C
-#include <Wire.h>
-#include <sh1106.h>
+//#include <Wire.h>
+#include "application.h"
+#include "sh1106.h"
+//#pragma SPARK_NO_PREPROCESSOR
  
 
 
