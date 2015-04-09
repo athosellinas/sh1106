@@ -1,0 +1,7 @@
+{
+  "name": "sh1106",
+  "author": "Dan Milligan",
+  "license": "MIT",
+  "version": "0.0.1",
+  "description": "A library for the SH1106 chipset via I2C"
+}
