@@ -20,26 +20,25 @@
 /*
  * Commands for the display
  */
-#define SET_PAGE_ADDRESS                0xB0 /* sets the page address from 0 to 7 */
-#define DISPLAY_OFF                     0xAE
-#define DISPLAY_ON                      0xAF
-#define SET_MEMORY_ADDRESSING_MODE      0x20
-#define SET_COM_OUTPUT_SCAN_DIRECTION   0xC8
-#define LOW_COLUMN_ADDRESS              0x00
-#define HIGH_COLUMN_ADDRESS             0x10
-#define START_LINE_ADDRESS              0x40
-#define SET_CONTRAST_CTRL_REG           0x81
-#define SET_SEGMENT_REMAP               0xA1 // 0 to 127
-#define SET_NORMAL_DISPLAY              0xA6
-#define SET_MULTIPLEX_RATIO             0xA8
-#define OUTPUT_FOLLOWS_RAM              0xA4
+#define SET_PAGE_ADDRESS                0xB0  /* sets the page address from 0 to 7 */
+#define DISPLAY_OFF                     0xAE  //
+#define DISPLAY_ON                      0xAF  //
+#define SET_MEMORY_ADDRESSING_MODE      0x20 
+#define SET_COM_OUTPUT_SCAN_DIRECTION   0xC8  //
+#define LOW_COLUMN_ADDRESS              0x02  // may be 0x02 (set 0x00)
+#define HIGH_COLUMN_ADDRESS             0x10  //
+#define START_LINE_ADDRESS              0x40  //
+#define SET_CONTRAST_CTRL_REG           0x81  // contrast set by 0x80 0-255
+#define SET_SEGMENT_REMAP               0xA1  // 0 to 127
+#define SET_NORMAL_DISPLAY              0xA6  // 0xA7 to invert
+#define SET_MULTIPLEX_RATIO             0xA8  //
+#define OUTPUT_FOLLOWS_RAM              0xA4  
 #define OUTPUT_IGNORES_RAM              0xA5
-
-#define SET_DISPLAY_OFFSET              0xD3
-#define SET_DISPLAY_CLOCK_DIVIDE        0xD5
-#define SET_PRE_CHARGE_PERIOD           0xD9
-#define SET_COM_PINS_HARDWARE_CONFIG    0xDA
-#define SET_VCOMH                       0xDB
+#define SET_DISPLAY_OFFSET              0xD3  //
+#define SET_DISPLAY_CLOCK_DIVIDE        0xD5  //osc division
+#define SET_PRE_CHARGE_PERIOD           0xD9  //
+#define SET_COM_PINS_HARDWARE_CONFIG    0xDA  // set com pins
+#define SET_VCOMH                       0xDB  //
 #define SET_DC_DC_ENABLE                0x8D
 
 
