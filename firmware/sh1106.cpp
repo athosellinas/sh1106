@@ -1,14 +1,15 @@
 //
 //  sh1106.cpp
-//  
+//
 //
 //  Created by Daniel Milligan on 8/3/14.
+//  Adapted for Spark by Dustin Sellinger, April 2015.
 //
-//
-#include <stdio.h>
+//#include <stdio.h>
 
 // Pull in the wire library to communicate with the LCD over I2C
 //#include <Wire.h>
+
 #include "application.h"
 
 #include "sh1106.h"
@@ -98,37 +99,65 @@ sh1106_lcd *sh1106_lcd::getInstance()
 void sh1106_lcd::Initialize()
 {
     Wire.begin(); // begin without address as a master device
-    
-    SendCommand(DISPLAY_OFF, StartSend);
-    SendCommand(SET_MEMORY_ADDRESSING_MODE, MidSend);
-    SendCommand(PAGE, MidSend);
-    SendCommand(SET_PAGE_ADDRESS, MidSend); // start at page address 0
-    SendCommand(SET_COM_OUTPUT_SCAN_DIRECTION, MidSend);
-    SendCommand(LOW_COLUMN_ADDRESS, MidSend);
-    SendCommand(HIGH_COLUMN_ADDRESS, MidSend);
-    SendCommand(START_LINE_ADDRESS, MidSend);
-    SendCommand(SET_CONTRAST_CTRL_REG, MidSend);
-    SendCommand(0x7F, MidSend);
-    SendCommand(SET_SEGMENT_REMAP, MidSend);
-    SendCommand(SET_NORMAL_DISPLAY, MidSend);
-    SendCommand(SET_MULTIPLEX_RATIO, MidSend);
-    SendCommand(0x3F, MidSend);  //duty cycle = 1/32
-//    SendCommand(OUTPUT_FOLLOWS_RAM, MidSend);
-    SendCommand(SET_DISPLAY_OFFSET, MidSend);
-    SendCommand(0x00, MidSend); // no offset
-    SendCommand(SET_DISPLAY_CLOCK_DIVIDE, MidSend);
-    SendCommand(0xF0, MidSend);
-    SendCommand(SET_PRE_CHARGE_PERIOD, MidSend);
-    SendCommand(0x22, MidSend);
-    SendCommand(SET_COM_PINS_HARDWARE_CONFIG, MidSend);
+
+    SendCommand(0xAE, StartSend); //DISPLAY_OFF
+
+    SendCommand(0x02, MidSend); //LOW_COLUMN_ADDRESS
+    SendCommand(0x10, MidSend); //HIGH_COLUMN_ADDRESS
+
+    SendCommand(0x40, MidSend); //START_LINE_ADDRESS
+
+    SendCommand(0xB0, MidSend); //SET_PAGE_ADDRESS start at page address 0 up to 7
+
+    SendCommand(0x81, MidSend); //SET_CONTRAST_CTRL_REG
+    SendCommand(0x80, MidSend); //CONTRAST VALUE *128
+
+    SendCommand(0xA1, MidSend); //SET_SEGMENT_REMAP
+
+    SendCommand(0xA6, MidSend); //SET_NORMAL_DISPLAY (0xA7 to invert)
+    SendCommand(0xA8, MidSend); //SET_MULTIPLEX_RATIO
+    SendCommand(0x3F, MidSend); //duty cycle = 1/32
+
+    SendCommand(0xAD, MidSend); //set charge pump enable
+	     /****  From docs  ****
+	     Set DC-DC OFF/ON: (Double Bytes Command)
+         This command is to control the DC-DC voltage converter. The converter will be turned on by issuing this command then display ON command. The panel display must be off while issuing this command.
+         * DC-DC Control Mode Set: (ADH) */
+    SendCommand(0x8B, MidSend); //external VCC on / 0x8A Disabled
+
+    SendCommand(0x30, MidSend); // 0X30---0X33  set VPP  9V liangdu!!!!  (wtf does that mean?)
+
+    SendCommand(0xC8, MidSend); //SET_COM_OUTPUT_SCAN_DIRECTION
+
+    SendCommand(0xD3, MidSend); //SET_DISPLAY_OFFSET
+    SendCommand(0x00, MidSend); // no offset or 0x20)
+
+    SendCommand(0xD5, MidSend); //SET_DISPLAY_CLOCK_DIVIDE / osc division
+    SendCommand(0x80, MidSend); // Osc Freq 0x80, 0xF0
+
+    SendCommand(0xD9, MidSend); //SET_PRE_CHARGE_PERIOD
+    SendCommand(0x1F, MidSend); // 0x1F, or 0x22
+
+    SendCommand(0xDA, MidSend); //SET_COM_PINS_HARDWARE_CONFIG
     SendCommand(0x12, MidSend);
-    SendCommand(SET_VCOMH, MidSend);
-    SendCommand(0x20, MidSend); // 0.77xVcc
-    SendCommand(SET_DC_DC_ENABLE, MidSend);
-    SendCommand(0x14, MidSend);
-    
-    SendCommand(DISPLAY_ON, FinishSend);
-    
+
+    SendCommand(0xDB, MidSend); //SET_VCOMH
+    SendCommand(0x40, MidSend); // 0.77xVcc = 0x20  (or 0x40)  VCOM  = � X V REF = (0.430 + A[7:0] X 0.006415) X VREF
+
+    SendCommand(0xAF, FinishSend); //DISPLAY_ON
+
+/*****  Possibly unneeded controls ***
+    SendCommand(0x20, MidSend); //SET_MEMORY_ADDRESSING_MODE
+    SendCommand(0x02, MidSend);  //PAGE (was undefined)
+
+    SendCommand(0x7F, MidSend);  //Display Startline
+
+    SendCommand(0xA4, MidSend); //OUTPUT_FOLLOWS_RAM
+
+    SendCommand(0x8D, MidSend); //SET_DC_DC_ENABLE  (Docs say this is entire display on/off)
+    SendCommand(0x14, MidSend); //enable, 0x10=disable
+*********************************/
+
     memset(m_screen, 0, SCREEN_WIDTH * MAX_PAGE_COUNT);
     m_currentLine = 0;
     m_cursor = 0;
@@ -137,16 +166,16 @@ void sh1106_lcd::Initialize()
 void sh1106_lcd::Show()
 {
     SendState state = StartSend;
-    
+
     for (int index = 0; index < MAX_PAGE_COUNT; index++)
     {
         SendCommand(SET_PAGE_ADDRESS + index, StartSend);
-        SendCommand(0x00, MidSend); // low column start address
+        SendCommand(0x02, MidSend); // low column start address
         SendCommand(0x10, FinishSend); // high column start address
         for (int pixel = 0; pixel < SCREEN_WIDTH; pixel++)
         {
             SendData(m_screen[index][pixel]);
-            
+
             if (state == StartSend)
             {
                 state = MidSend;
@@ -172,7 +201,7 @@ void sh1106_lcd::FillScreen(byte fillData)
 
     m_currentLine = 0;
     m_cursor = 0;
-    
+
     Show();
 }
 
@@ -181,7 +210,7 @@ void sh1106_lcd::ClearScreen()
     FillScreen(0x00);
 }
 
-/* 
+/*
  * x can be from 0 to 131
  * y can be from 0 to 63
  *
@@ -191,7 +220,7 @@ void sh1106_lcd::DrawPixel(byte x, byte y, bool on)
 {
     byte pageId = y / MAX_PAGE_COUNT;       // convert from byte to page
     byte bitOffset = y % MAX_PAGE_COUNT;    // establish the bit offset
-    
+
     if (pageId < MAX_PAGE_COUNT)
     {
         if (x < SCREEN_WIDTH)
@@ -214,19 +243,19 @@ void sh1106_lcd::DrawRectangle(byte x1, byte y1, byte x2, byte y2)
     byte pageId2 = y2 / MAX_PAGE_COUNT;
     byte bit1 = 1 << (y1 % MAX_PAGE_COUNT);
     byte bit2 = 1 << (y2 % MAX_PAGE_COUNT);
-    
+
     if ((pageId1 < MAX_PAGE_COUNT) && (pageId2 < MAX_PAGE_COUNT))
     {
         if (x1 >= SCREEN_WIDTH)
         {
             x1 = SCREEN_WIDTH - 1;
         }
-        
+
         if (x2 >= SCREEN_WIDTH)
         {
             x2 = SCREEN_WIDTH - 1;
         }
-        
+
         if (x1 == x2)
         {
             x2++; // give at least one
@@ -237,14 +266,14 @@ void sh1106_lcd::DrawRectangle(byte x1, byte y1, byte x2, byte y2)
             m_screen[pageId1][xCord] |= bit1;
             m_screen[pageId2][xCord] |= bit2;
         }
-        
+
         if (y2 < y1)
         {
             byte temp = y1;
             y1 = y2;
             y2 = temp;
         }
-        
+
         // Sets left and right line
         for (/* set above */; y1 < y2; y1++)
         {
@@ -254,9 +283,9 @@ void sh1106_lcd::DrawRectangle(byte x1, byte y1, byte x2, byte y2)
             if (bit1 == 0)
             {
                 bit1++;
-                    
+
                 pageId1++; // move to next page we just rolled
-                    
+
                 if (pageId1 >= MAX_PAGE_COUNT)
                 {
                     break;
@@ -277,7 +306,7 @@ void sh1106_lcd::DrawRectangle(byte x1, byte y1, byte x2, byte y2, byte thicknes
         x2--;
         y1++;
         y2--;
-        
+
         if (x1 >= SCREEN_WIDTH || x2 >= SCREEN_WIDTH || y1 >= SCREEN_HEIGHT || y2 >= SCREEN_HEIGHT)
         {
             break;
@@ -291,45 +320,45 @@ void sh1106_lcd::FillRectangle(byte x1, byte y1, byte x2, byte y2)
     byte pageId2 = y2 / MAX_PAGE_COUNT;
     byte bit1 = 1 << (y1 % MAX_PAGE_COUNT);
     byte bit2 = 1 << (y2 % MAX_PAGE_COUNT);
-    
+
     if ((pageId1 < MAX_PAGE_COUNT) && (pageId2 < MAX_PAGE_COUNT))
     {
         if (x1 >= SCREEN_WIDTH)
         {
             x1 = SCREEN_WIDTH - 1;
         }
-        
+
         if (x2 >= SCREEN_WIDTH - 1)
         {
             x2 = SCREEN_WIDTH;
         }
-        
+
         if (x1 == x2)
         {
             x2++;
         }
-        
+
         if (y2 < y1)
         {
             byte temp = y1;
             y1 = y2;
             y2 = temp;
         }
-        
+
         for (/* set above */; y1 < y2; y1++)
         {
             for (byte xCord = x1; xCord < x2; xCord++)
             {
                 m_screen[pageId1][xCord] |= bit1;
             }
-                
+
             bit1 <<= 1;
             if (bit1 == 0)
             {
                 bit1++;
 
                 pageId1++; // move to next page we just rolled
-                    
+
                 if (pageId1 >= MAX_PAGE_COUNT)
                 {
                     break;
@@ -347,36 +376,36 @@ void sh1106_lcd::DrawLine(byte x1, byte y1, byte x2, byte y2)
     byte bit2 = 1 << (y2 % MAX_PAGE_COUNT);
     byte dy = y2 - y1;
     byte dx = x2 - x1;
-    
+
     if (x1 > x2)
     {
         dx = x1 - x2;
-        
+
         byte temp = x1;
         x1 = x2;
         x2 = temp;
     }
-    
+
     if ((pageId1 < MAX_PAGE_COUNT) && (pageId2 < MAX_PAGE_COUNT))
     {
         if (x1 >= SCREEN_WIDTH)
         {
             x1 = SCREEN_WIDTH - 1;
         }
-        
+
         if (x2 >= SCREEN_WIDTH)
         {
             x2 = SCREEN_WIDTH - 1;
         }
-        
+
         if (x1 == x2)
         {
             x2++; // give us one pixel width
         }
-        
+
         /* Utilizing the Bresenham algorithm */
         int eps = 0;
-            
+
         if (y1 < y2)
         {
             for (/* set above */; y1 < y2; y1++)
@@ -384,9 +413,9 @@ void sh1106_lcd::DrawLine(byte x1, byte y1, byte x2, byte y2)
                 for (byte xCord = x1; xCord < x2; xCord++)
                 {
                     m_screen[pageId1][xCord] |= bit1;
-                    
+
                     eps += dy;
-                    
+
                     if ((eps << 1) >= dx)
                     {
                         y1++;
@@ -394,9 +423,9 @@ void sh1106_lcd::DrawLine(byte x1, byte y1, byte x2, byte y2)
                         if (bit1 == 0)
                         {
                             pageId1++; // move to next page we just rolled
-                                
+
                             bit1++; // back to bit 1 equal to 1
-                
+
                             if (pageId1 >= MAX_PAGE_COUNT)
                             {
                                 break; // done
@@ -422,20 +451,20 @@ void sh1106_lcd::DrawLine(byte x1, byte y1, byte x2, byte y2)
                 for (byte xCord = x1; xCord < x2; xCord++)
                 {
                     m_screen[pageId2][xCord] |= bit2;
-                        
+
                     eps += dy;
-                        
+
                     if ((eps << 1) >= dx)
                     {
                         y1--;
                         bit2 >>= 1;
-                            
+
                         if (bit2 == 0)
                         {
                             pageId2--; // move to next page we just rolled
-                                
+
                             bit2 = 0x80; // high order bit set and then will shift down to 0
-                                
+
                             // if it rolled around
                             if (pageId2 > MAX_PAGE_COUNT)
                             {
@@ -467,7 +496,7 @@ void sh1106_lcd::PrintData(char *data, bool incrementLine)
     bool eol = false;
     int index = 0;
     int lineIndex = 0;
-    
+
     // time to scroll
     if (m_currentLine == MAX_PAGE_COUNT)
     {
@@ -484,7 +513,7 @@ void sh1106_lcd::PrintData(char *data, bool incrementLine)
     {
         lineIndex = m_currentLine;
     }
-    
+
     while (eol == false)
     {
         if (data[index] != NULL)
@@ -511,7 +540,7 @@ void sh1106_lcd::PrintData(char *data, bool incrementLine)
             {
                 pPtr = (byte *)&space;
             }
-            
+
             if (pPtr != NULL)
             {
                 for (int numberIndex = 0; numberIndex < CHARACTER_WIDTH; numberIndex++)
@@ -533,7 +562,7 @@ void sh1106_lcd::PrintData(char *data, bool incrementLine)
             eol = true; // done
         }
     }
-    
+
     if (incrementLine == true)
     {
         if (m_currentLine < MAX_PAGE_COUNT)
@@ -551,7 +580,7 @@ byte sh1106_lcd::SendCommand(byte command, SendState state)
         Wire.beginTransmission(SH1106_ADDR1);
         Wire.write(SH1106_COMMAND);
     }
-    
+
     return SendByte(command, state);
 }
 
@@ -562,7 +591,7 @@ byte sh1106_lcd::SendData(byte data, SendState state)
         Wire.beginTransmission(SH1106_ADDR1);
         Wire.write(SH1106_DATA);
     }
-    
+
     return SendByte(data, state);
 }
 
@@ -571,11 +600,11 @@ byte sh1106_lcd::SendByte(byte data, SendState state)
     Wire.write(data);
 
     byte transmissionStatus = 0;
-    
+
     if (state == FinishSend || state == Complete)
     {
         transmissionStatus = Wire.endTransmission();
     }
-    
+
     return transmissionStatus;
 }
