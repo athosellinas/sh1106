@@ -112,8 +112,8 @@ void sh1106_lcd::Initialize()
     SendCommand(SET_SEGMENT_REMAP, MidSend);
     SendCommand(SET_NORMAL_DISPLAY, MidSend);
     SendCommand(SET_MULTIPLEX_RATIO, MidSend);
-    SendCommand(0x3F, MidSend);
-    SendCommand(OUTPUT_FOLLOWS_RAM, MidSend);
+    SendCommand(0x3F, MidSend);  //duty cycle = 1/32
+//    SendCommand(OUTPUT_FOLLOWS_RAM, MidSend);
     SendCommand(SET_DISPLAY_OFFSET, MidSend);
     SendCommand(0x00, MidSend); // no offset
     SendCommand(SET_DISPLAY_CLOCK_DIVIDE, MidSend);
