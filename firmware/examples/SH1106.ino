@@ -5,67 +5,94 @@
  *
  * Based in part off of code from: http://wenku.baidu.com/view/43ebc40aba1aa8114431d940.html
  and http://blog.l3l4.com/iot/kitchenscale01/
+ Screen is 128x64 pixels, X is 0-127, Y is 0-63
+
+ // For getting Variables to output as string, then char?
+  int a=1;     //declaring integer
+  char b[2];   //declaring character array
+  String str;  //declaring string
+
+  str=String(a); //converting integer into a string
+  str.toCharArray(b,2); //passing the value of the string to the character array
+  Serial.print("Value of b is \t");  //display that value
+  Serial.println(b);
+
  */
 
 #include "application.h"
-#include "sh1106.h"
+#include "sh1106/sh1106.h"
+
+String VAR=           "136.5";  //print a string or variable in your display
+char  charVAR[10];  //need a holder for the variable
 
 volatile boolean g_writeValue = false;
 volatile int g_displayValue = 0;
 
-sh1106_lcd *g_pLCD = NULL;
+sh1106_lcd *glcd = NULL;
 void setup()
 {
   Serial.begin(9600);
 
-  g_pLCD = sh1106_lcd::getInstance();
+  glcd = sh1106_lcd::getInstance();
 
-  if (g_pLCD != NULL)
+  if (glcd != NULL)
   {
-    g_pLCD->ClearScreen();
+    glcd->ClearScreen();
   }
-
-  g_writeValue = true;
+  delay(2000);
 }
 
 // Quick sketch showing functionality of library
 void loop()
 {
-  if (g_writeValue == true)
-  {
-    g_pLCD->DrawRectangle(0, 0, 100, 48, 2); // draw a box from 0, 0 to 100, 48
-    g_pLCD->FillRectangle(25, 25, 30, 30);
-    g_pLCD->Show();
+    glcd->ClearScreen();
+    glcd->DrawRectangle(14, 0, 114, 48, 2); // draw a box from 0, 0 to 100, 48
+    glcd->Show();
     delay(500);
+    glcd->FillRectangle(25, 25, 40, 40);
+    glcd->Show();
+    delay(500);
+    //  Print the existing alphabet
+    glcd->PrintLine(" !\"#$%&'()*+,-./");
+    glcd->PrintLine("0123456789:;<=>?@");
+    glcd->PrintLine("ABCDEFGHIJKLMNOPQ");
+    glcd->PrintLine("RSTUVWXYZ[\ ]^_`");
+    glcd->PrintLine("abcdefghijklmnopq");
+    glcd->PrintLine("rstuvwxyz{|}~ Fin");
+    delay(5000);
+    glcd->ClearScreen();
 
-    g_pLCD->PrintLine("0123456789");
-    g_pLCD->PrintLine("aBcDEF GHIJK");
-    g_pLCD->PrintLine("LMNOP QRSTUV");
-    g_pLCD->PrintLine("WXYZ");
-    g_pLCD->PrintLine("AAAA");
-    g_pLCD->PrintLine("EEEE");
-    g_pLCD->PrintLine("FFFF");
-    g_pLCD->PrintLine("GGGG");
-    delay(250);
-    g_pLCD->PrintLine("HHHH");
+    VAR.toCharArray(charVAR, 6); // Convert string to char for display output.
+    //glcd->Print("Usage: ");
+    //glcd->Print(charVAR);
+    char str[80];
+    strcpy (str," Variable=");
+    strcat (str,charVAR);
+    strcat (str," !");
+    glcd->PrintLine("");
+    glcd->PrintLine("");
+    glcd->PrintLine(str);   //"Usage:"+charVAR+" Watts");
+    glcd->DrawRectangle(2, 12, 114, 26, 1); // draw a box around the text
+    glcd->Show();
 
-    g_pLCD->DrawPixel(0, 0, true);
-    g_pLCD->DrawPixel(127, 0, true);
-    g_pLCD->DrawPixel(127, 63, true);
-    g_pLCD->DrawPixel(0, 63, true);
-    g_pLCD->Show();
-    delay(2000);
-    g_writeValue = false;
-  }
-  else
-  {
-    g_pLCD->ClearScreen();
-    g_pLCD->DrawLine(20, 31, 64, 31);
-    g_pLCD->DrawLine(0, 0, 50, 50);
-    g_pLCD->DrawLine(50, 50, 20, 20);
-    g_pLCD->DrawLine(0, 50, 0, 20);
+    // add some dots to the edge of the screen
+    glcd->DrawPixel(0, 0, true);
+    glcd->DrawPixel(127, 0, true);
+    glcd->DrawPixel(127, 63, true);
+    glcd->DrawPixel(0, 63, true);
+    glcd->Show();
+    delay(5000);
 
-    g_pLCD->Show();
-    while(1);
-  }
+    glcd->ClearScreen();
+    glcd->DrawLine(10, 32, 113, 32); //Straight across L > R
+    glcd->DrawLine(63, 0, 63, 63);  // Straight down
+    glcd->Show();
+    delay(500);
+    glcd->DrawLine(0, 0, 63, 32);  // Diag
+    glcd->Show();
+    //glcd->DrawLine(63, 32, 123, 0);  // Diag up dosn't work
+    glcd->DrawLine(31, 0, 63, 32);  // Diag
+    glcd->DrawLine(0, 16, 63, 32);  // Diag
+    glcd->Show();
+    delay(3000);
 }
