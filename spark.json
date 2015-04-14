@@ -2,6 +2,6 @@
   "name": "sh1106",
   "author": "Dan Milligan modified by Dustin Sellinger ",
   "license": "MIT",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A library for the SH1106 chipset via I2C"
 }
