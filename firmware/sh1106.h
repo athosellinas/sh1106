@@ -11,8 +11,8 @@
 
 #include "application.h"
 
-#define SH1106_ADDR1 0x3C // write data
-#define SH1106_ADDR2 0x3D // read data
+#define SH1106_ADDR1 0x7A // write data
+#define SH1106_ADDR2 0x78 // read data
 #define SH1106_COMMAND 0x00
 #define SH1106_DATA 0x40
 
